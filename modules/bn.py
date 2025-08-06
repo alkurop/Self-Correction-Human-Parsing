@@ -9,6 +9,8 @@ except ImportError:
 
 from .functions import *
 
+USE_CPP_ABN = False  # force fallback
+
 
 class ABN(nn.Module):
     """Activated Batch Normalization
@@ -102,12 +104,30 @@ class InPlaceABN(ABN):
         slope : float
             Negative slope for the `leaky_relu` activation.
         """
-        super(InPlaceABN, self).__init__(num_features, eps, momentum, affine, activation, slope)
+        super(InPlaceABN, self).__init__(num_features,
+                                         eps, momentum, affine, activation, slope)
 
     def forward(self, x):
-        x, _, _ = inplace_abn(x, self.weight, self.bias, self.running_mean, self.running_var,
-                           self.training, self.momentum, self.eps, self.activation, self.slope)
-        return x
+        if USE_CPP_ABN:
+            x, _, _ = inplace_abn(x, self.weight, self.bias, self.running_mean, self.running_var,
+                                  self.training, self.momentum, self.eps, self.activation, self.slope)
+            return x
+
+        else:
+            print("[Fallback] Using pure PyTorch BatchNorm2d instead of InPlaceABNSync")
+            x = functional.batch_norm(
+                x, self.running_mean, self.running_var,
+                self.weight, self.bias,
+                self.training, self.momentum, self.eps
+            )
+            if self.activation == "leaky_relu":
+                return functional.leaky_relu(x, negative_slope=self.slope, inplace=True)
+            elif self.activation == "elu":
+                return functional.elu(x, inplace=True)
+            elif self.activation == "relu":
+                return functional.relu(x, inplace=True)
+            else:
+                return x
 
 
 class InPlaceABNSync(ABN):
@@ -116,9 +136,26 @@ class InPlaceABNSync(ABN):
     """
 
     def forward(self, x):
-        x, _, _ =  inplace_abn_sync(x, self.weight, self.bias, self.running_mean, self.running_var,
-                                   self.training, self.momentum, self.eps, self.activation, self.slope)
-        return x
+        if USE_CPP_ABN:
+
+            x, _, _ = inplace_abn_sync(x, self.weight, self.bias, self.running_mean, self.running_var,
+                                       self.training, self.momentum, self.eps, self.activation, self.slope)
+            return x
+        else:
+            print("[Fallback] Using pure PyTorch BatchNorm2d instead of InPlaceABNSync")
+            x = functional.batch_norm(
+                x, self.running_mean, self.running_var,
+                self.weight, self.bias,
+                self.training, self.momentum, self.eps
+            )
+            if self.activation == "leaky_relu":
+                return functional.leaky_relu(x, negative_slope=self.slope, inplace=True)
+            elif self.activation == "elu":
+                return functional.elu(x, inplace=True)
+            elif self.activation == "relu":
+                return functional.relu(x, inplace=True)
+            else:
+                return x
 
     def __repr__(self):
         rep = '{name}({num_features}, eps={eps}, momentum={momentum},' \
@@ -128,5 +165,3 @@ class InPlaceABNSync(ABN):
         else:
             rep += ')'
         return rep.format(name=self.__class__.__name__, **self.__dict__)
-
-
