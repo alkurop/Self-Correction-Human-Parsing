@@ -10,14 +10,16 @@ USE_CPP_ABN = os.environ.get("USE_CPP_ABN", "1") == "1"
 
 if USE_CPP_ABN:
     from torch.utils.cpp_extension import load
+    _src_path = path.join(path.dirname(path.abspath(__file__)), "src")
     _backend = load(
         name="inplace_abn",
         extra_cflags=["-O3"],
         extra_cuda_cflags=["--expt-extended-lambda"],
         sources=[
-            "modules/src/inplace_abn.cpp",
-            "modules/src/inplace_abn_cpu.cpp",
-            "modules/src/inplace_abn_cuda.cu"
+            path.join(_src_path, "inplace_abn.cpp"),
+            path.join(_src_path, "inplace_abn_cpu.cpp"),
+            path.join(_src_path, "inplace_abn_cuda.cu"),
+            path.join(_src_path, "inplace_abn_cuda_half.cu")
         ]
     )
     inplace_abn = _backend.inplace_abn
