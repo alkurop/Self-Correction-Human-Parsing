@@ -115,7 +115,6 @@ class InPlaceABN(ABN):
             return x
 
         else:
-            print("[Fallback] Using pure PyTorch BatchNorm2d instead of InPlaceABNSync")
             x = functional.batch_norm(
                 x, self.running_mean, self.running_var,
                 self.weight, self.bias,
@@ -143,7 +142,6 @@ class InPlaceABNSync(ABN):
                                        self.training, self.momentum, self.eps, self.activation, self.slope)
             return x
         else:
-            print("[Fallback] Using pure PyTorch BatchNorm2d instead of InPlaceABNSync")
             x = functional.batch_norm(
                 x, self.running_mean, self.running_var,
                 self.weight, self.bias,
