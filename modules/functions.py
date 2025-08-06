@@ -4,7 +4,28 @@ import torch.distributed as dist
 import torch.autograd as autograd
 import torch.cuda.comm as comm
 from torch.autograd.function import once_differentiable
-from torch.utils.cpp_extension import load
+
+import os
+USE_CPP_ABN = os.environ.get("USE_CPP_ABN", "1") == "1"
+
+if USE_CPP_ABN:
+    from torch.utils.cpp_extension import load
+    _backend = load(
+        name="inplace_abn",
+        extra_cflags=["-O3"],
+        extra_cuda_cflags=["--expt-extended-lambda"],
+        sources=[
+            "modules/src/inplace_abn.cpp",
+            "modules/src/inplace_abn_cpu.cpp",
+            "modules/src/inplace_abn_cuda.cu"
+        ]
+    )
+    inplace_abn = _backend.inplace_abn
+    inplace_abn_sync = _backend.inplace_abn_sync
+else:
+    inplace_abn = None
+    inplace_abn_sync = None
+
 
 _src_path = path.join(path.dirname(path.abspath(__file__)), "src")
 _backend = load(name="inplace_abn",

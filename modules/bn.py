@@ -8,8 +8,9 @@ except ImportError:
     from Queue import Queue
 
 from .functions import *
+import os
 
-USE_CPP_ABN = False  # force fallback
+USE_CPP_ABN = os.environ.get("USE_CPP_ABN", "1") == "1"
 
 
 class ABN(nn.Module):
