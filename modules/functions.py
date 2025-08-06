@@ -22,13 +22,8 @@ if USE_CPP_ABN:
     )
     inplace_abn = _backend.inplace_abn
     inplace_abn_sync = _backend.inplace_abn_sync
-else:
-    inplace_abn = None
-    inplace_abn_sync = None
-
-
-_src_path = path.join(path.dirname(path.abspath(__file__)), "src")
-_backend = load(name="inplace_abn",
+    _src_path = path.join(path.dirname(path.abspath(__file__)), "src")
+    _backend = load(name="inplace_abn",
                 extra_cflags=["-O3"],
                 sources=[path.join(_src_path, f) for f in [
                     "inplace_abn.cpp",
@@ -37,6 +32,9 @@ _backend = load(name="inplace_abn",
                     "inplace_abn_cuda_half.cu"
                 ]],
                 extra_cuda_cflags=["--expt-extended-lambda"])
+else:
+    inplace_abn = None
+    inplace_abn_sync = None
 
 # Activation names
 ACT_RELU = "relu"
